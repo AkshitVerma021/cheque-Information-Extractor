@@ -44,7 +44,7 @@ Extracts the following information:
 ## 🚀 Features
 
 ### Core Capabilities
-- **Multi-Model AI Processing**: Uses both Claude 3 Haiku and Claude 3 Sonnet for enhanced accuracy
+- **Multi-Model AI Processing**: Uses both Claude 3 Haiku 
 - **Automated Document Type Detection**: Intelligently identifies cheques vs bills
 - **Real-time Processing**: Immediate extraction with progress tracking
 - **Batch Processing**: Handle multiple documents simultaneously
