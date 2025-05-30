@@ -66,7 +66,7 @@ Extracts the following information:
 ## 🛠️ Technology Stack
 
 - **Frontend**: Streamlit
-- **AI Models**: Amazon Bedrock (Claude 3 Haiku & Sonnet)
+- **AI Models**: Amazon Bedrock (Claude 3 Haiku)
 - **Cloud Services**: AWS S3, AWS Bedrock
 - **Image Processing**: PIL (Python Imaging Library)
 - **Data Processing**: Pandas, JSON
