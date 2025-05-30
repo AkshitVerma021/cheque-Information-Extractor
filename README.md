@@ -114,7 +114,7 @@ cd cheque-extractor
 pip install -r requirements.txt
 
 # Run the application
-streamlit run main.py
+python -m streamlit run main.py 
 ```
 
 ## 📱 Usage
