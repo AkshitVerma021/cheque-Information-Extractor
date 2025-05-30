@@ -6,6 +6,9 @@ from PIL import Image
 from typing import Dict, Optional
 import streamlit as st
 import re
+import time
+import random
+from botocore.exceptions import ClientError
 
 from config.config import (
     AWS_REGION, 
@@ -23,7 +26,58 @@ class AIService:
             aws_access_key_id=AWS_ACCESS_KEY_ID,
             aws_secret_access_key=AWS_SECRET_ACCESS_KEY
         )
+        self.last_request_time = 0
+        self.min_request_interval = 1.0  # Minimum 1 second between requests
     
+    def _rate_limit(self):
+        """Implement rate limiting between requests"""
+        current_time = time.time()
+        time_since_last_request = current_time - self.last_request_time
+        
+        if time_since_last_request < self.min_request_interval:
+            sleep_time = self.min_request_interval - time_since_last_request
+            time.sleep(sleep_time)
+        
+        self.last_request_time = time.time()
+    
+    def _invoke_model_with_retry(self, model_id: str, body: str, max_retries: int = 5) -> Dict:
+        """Invoke Bedrock model with exponential backoff retry logic"""
+        for attempt in range(max_retries):
+            try:
+                self._rate_limit()  # Apply rate limiting
+                
+                response = self.bedrock_client.invoke_model(
+                    modelId=model_id,
+                    body=body
+                )
+                return json.loads(response['body'].read())
+                
+            except ClientError as e:
+                error_code = e.response['Error']['Code']
+                
+                if error_code == 'ThrottlingException':
+                    if attempt < max_retries - 1:
+                        # Exponential backoff with jitter
+                        wait_time = (2 ** attempt) + random.uniform(0, 1)
+                        st.warning(f"Rate limit reached. Waiting {wait_time:.1f} seconds before retry {attempt + 1}/{max_retries}...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        raise Exception(f"Max retries reached for {model_id}. Please wait a few minutes before trying again.")
+                else:
+                    # For other errors, don't retry
+                    raise e
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2 ** attempt
+                    st.warning(f"Error occurred. Retrying in {wait_time} seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise e
+        
+        raise Exception(f"Failed to invoke {model_id} after {max_retries} attempts")
+
     def _prepare_image(self, image: Image.Image) -> str:
         """Convert image to base64 encoded string with compression if needed"""
         # Convert to RGB if it's RGBA
@@ -71,15 +125,16 @@ class AIService:
             ]  
         }  
         
-        validation_response = self.bedrock_client.invoke_model(  
-            modelId=model_id,  
-            body=json.dumps(validation_body)  
-        )  
-        
-        validation_body = json.loads(validation_response['body'].read())  
-        validation_text = validation_body['content'][0]['text'].strip().lower()
-        
-        return "yes" in validation_text
+        try:
+            validation_response_body = self._invoke_model_with_retry(
+                model_id, 
+                json.dumps(validation_body)
+            )
+            validation_text = validation_response_body['content'][0]['text'].strip().lower()
+            return "yes" in validation_text
+        except Exception as e:
+            st.error(f"Failed to validate cheque image: {str(e)}")
+            return False
     
     def _extract_json_from_response(self, response_text: str) -> Dict:
         """Extract JSON from model response text"""
@@ -144,14 +199,13 @@ class AIService:
                 ]  
             }  
             
-            # Call model
-            response = self.bedrock_client.invoke_model(  
-                modelId=model_id,  
-                body=json.dumps(body)  
-            )  
+            # Call model with retry logic
+            response_body = self._invoke_model_with_retry(
+                model_id, 
+                json.dumps(body)
+            )
             
             # Process response
-            response_body = json.loads(response['body'].read())  
             response_text = response_body['content'][0]['text'].strip()  
             
             # Extract and clean result

@@ -70,12 +70,12 @@ def display_cheque_result(processed_cheque: ProcessedCheque, index: int) -> None
                 "Field": ["Bank Name", "Account Holder", "Account Number", "Amount",  
                         "IFSC Code", "Date", "Signature Present"],  
                 "Extracted Value": [  
-                    cheque_data.bank,  
-                    cheque_data.account_holder,  
-                    cheque_data.account_number,  
-                    cheque_data.amount,  
-                    cheque_data.ifsc_code,  
-                    cheque_data.date,  
+                    str(cheque_data.bank),  
+                    str(cheque_data.account_holder),  
+                    str(cheque_data.account_number),  
+                    str(cheque_data.amount),  
+                    str(cheque_data.ifsc_code),  
+                    str(cheque_data.date),  
                     "Yes" if cheque_data.has_signature else "No"  
                 ]
             }  

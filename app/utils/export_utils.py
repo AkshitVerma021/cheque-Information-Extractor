@@ -24,12 +24,12 @@ def to_excel(processed_cheques: List[ProcessedCheque]) -> Tuple[bytes, str]:
         
         row_data = {
             "Cheque No.": i+1,
-            "Bank Name": cheque.data.bank,
-            "Account Holder": cheque.data.account_holder,
-            "Account Number": cheque.data.account_number,
-            "Amount": cheque.data.amount,
-            "IFSC Code": cheque.data.ifsc_code,
-            "Date": cheque.data.date,
+            "Bank Name": str(cheque.data.bank),
+            "Account Holder": str(cheque.data.account_holder),
+            "Account Number": str(cheque.data.account_number),
+            "Amount": str(cheque.data.amount),
+            "IFSC Code": str(cheque.data.ifsc_code),
+            "Date": str(cheque.data.date),
             "Signature Present": "Yes" if cheque.data.has_signature else "No",
             "Automated Accuracy": f"{automated_accuracy:.1f}%",
             "Bank Valid": "Yes" if validation_dict.get("bank", {}).get("valid", False) else "No",
